@@ -17,6 +17,8 @@ contract LaunchpadTokenTest is Test {
 
     string constant TOKEN_NAME = "Test Token";
     string constant TOKEN_SYMBOL = "TEST";
+    string constant TOKEN_DESCRIPTION = "A test token for the launchpad";
+    string constant TOKEN_IMAGE_URL = "https://example.com/token.png";
     uint256 constant BASE_PRICE = 0.001 ether; // 0.001 TON per token
     uint256 constant CURVE_COEFFICIENT = 1e8; // Very gentle curve for better reserve ratio
     uint256 constant MIN_RESERVE_RATIO = 5000; // 50% - lower for bonding curve model
@@ -42,7 +44,9 @@ contract LaunchpadTokenTest is Test {
             TOKEN_SYMBOL,
             BASE_PRICE,
             CURVE_COEFFICIENT,
-            MIN_RESERVE_RATIO
+            MIN_RESERVE_RATIO,
+            TOKEN_DESCRIPTION,
+            TOKEN_IMAGE_URL
         );
         token = LaunchpadToken(payable(tokenAddr));
     }
@@ -230,7 +234,9 @@ contract LaunchpadTokenTest is Test {
             creator,
             BASE_PRICE,
             CURVE_COEFFICIENT,
-            MIN_RESERVE_RATIO
+            MIN_RESERVE_RATIO,
+            TOKEN_DESCRIPTION,
+            TOKEN_IMAGE_URL
         );
 
         assertEq(freshToken.getReserveRatio(), 10000); // 100%
@@ -339,7 +345,9 @@ contract LaunchpadTokenTest is Test {
             creator,
             BASE_PRICE,
             CURVE_COEFFICIENT,
-            MIN_RESERVE_RATIO
+            MIN_RESERVE_RATIO,
+            TOKEN_DESCRIPTION,
+            TOKEN_IMAGE_URL
         );
 
         // First mint should work (we are the factory since we deployed)
@@ -357,7 +365,9 @@ contract LaunchpadTokenTest is Test {
             creator,
             BASE_PRICE,
             CURVE_COEFFICIENT,
-            MIN_RESERVE_RATIO
+            MIN_RESERVE_RATIO,
+            TOKEN_DESCRIPTION,
+            TOKEN_IMAGE_URL
         );
 
         vm.prank(user1);
@@ -431,5 +441,32 @@ contract LaunchpadTokenTest is Test {
                 // Burn may fail due to reserve ratio constraints - this is expected
             }
         }
+    }
+
+    // ============ Metadata Tests ============
+
+    function test_DeploymentSetsDescription() public view {
+        assertEq(token.description(), TOKEN_DESCRIPTION);
+    }
+
+    function test_DeploymentSetsImageUrl() public view {
+        assertEq(token.imageUrl(), TOKEN_IMAGE_URL);
+    }
+
+    function test_CreatorCanUpdateMetadata() public {
+        string memory newDesc = "Updated description";
+        string memory newUrl = "https://example.com/new.png";
+
+        vm.prank(creator);
+        token.updateMetadata(newDesc, newUrl);
+
+        assertEq(token.description(), newDesc);
+        assertEq(token.imageUrl(), newUrl);
+    }
+
+    function test_NonCreatorCannotUpdateMetadata() public {
+        vm.prank(user1);
+        vm.expectRevert("Only creator");
+        token.updateMetadata("hack", "https://evil.com/img.png");
     }
 }

@@ -19,6 +19,9 @@ contract LaunchpadFactoryTest is Test {
     uint256 constant DEFAULT_CURVE = 1e8; // Gentle curve for better reserve ratio
     uint256 constant DEFAULT_RESERVE_RATIO = 5000; // 50% - lower for bonding curve model
 
+    string constant DEFAULT_DESCRIPTION = "A test token for the launchpad";
+    string constant DEFAULT_IMAGE_URL = "https://example.com/token.png";
+
     event TokenCreated(
         address indexed token,
         address indexed creator,
@@ -28,7 +31,9 @@ contract LaunchpadFactoryTest is Test {
         uint256 curveCoefficient,
         uint256 minReserveRatio,
         uint256 initialMint,
-        uint256 timestamp
+        uint256 timestamp,
+        string description,
+        string imageUrl
     );
     event CreationFeeUpdated(uint256 oldFee, uint256 newFee);
     event FeeRecipientUpdated(address oldRecipient, address newRecipient);
@@ -70,7 +75,9 @@ contract LaunchpadFactoryTest is Test {
             "MTK",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
 
         assertNotEq(tokenAddr, address(0));
@@ -83,14 +90,16 @@ contract LaunchpadFactoryTest is Test {
 
         vm.prank(creator);
         vm.expectEmit(false, true, false, false);
-        emit TokenCreated(address(0), creator, "", "", 0, 0, 0, 0, 0);
+        emit TokenCreated(address(0), creator, "", "", 0, 0, 0, 0, 0, "", "");
 
         factory.createToken{value: totalPayment}(
             "Event Token",
             "EVT",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
     }
 
@@ -103,7 +112,9 @@ contract LaunchpadFactoryTest is Test {
             "REG",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
 
         // Check registry
@@ -131,7 +142,9 @@ contract LaunchpadFactoryTest is Test {
             "MINT",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
 
         LaunchpadToken token = LaunchpadToken(payable(tokenAddr));
@@ -149,7 +162,9 @@ contract LaunchpadFactoryTest is Test {
             "FEE",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
 
         assertEq(feeRecipient.balance, balanceBefore + CREATION_FEE);
@@ -163,7 +178,9 @@ contract LaunchpadFactoryTest is Test {
             "CHEAP",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
     }
 
@@ -176,7 +193,9 @@ contract LaunchpadFactoryTest is Test {
             "DUP",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
 
         vm.prank(user1);
@@ -186,7 +205,9 @@ contract LaunchpadFactoryTest is Test {
             "DUP",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
     }
 
@@ -200,7 +221,9 @@ contract LaunchpadFactoryTest is Test {
             "EMPTY",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
     }
 
@@ -214,7 +237,9 @@ contract LaunchpadFactoryTest is Test {
             "",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
     }
 
@@ -228,7 +253,9 @@ contract LaunchpadFactoryTest is Test {
             "ZERO",
             0, // Invalid
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
     }
 
@@ -242,7 +269,9 @@ contract LaunchpadFactoryTest is Test {
             "LOW",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            4000 // Below 50% minimum
+            4000, // Below 50% minimum
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
     }
 
@@ -256,7 +285,9 @@ contract LaunchpadFactoryTest is Test {
             "HIGH",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            10001 // Above 100%
+            10001, // Above 100%
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
     }
 
@@ -266,9 +297,9 @@ contract LaunchpadFactoryTest is Test {
         uint256 totalPayment = CREATION_FEE + 1 ether;
 
         vm.startPrank(creator);
-        factory.createToken{value: totalPayment}("Token1", "TK1", DEFAULT_BASE_PRICE, DEFAULT_CURVE, DEFAULT_RESERVE_RATIO);
-        factory.createToken{value: totalPayment}("Token2", "TK2", DEFAULT_BASE_PRICE, DEFAULT_CURVE, DEFAULT_RESERVE_RATIO);
-        factory.createToken{value: totalPayment}("Token3", "TK3", DEFAULT_BASE_PRICE, DEFAULT_CURVE, DEFAULT_RESERVE_RATIO);
+        factory.createToken{value: totalPayment}("Token1", "TK1", DEFAULT_BASE_PRICE, DEFAULT_CURVE, DEFAULT_RESERVE_RATIO, DEFAULT_DESCRIPTION, DEFAULT_IMAGE_URL);
+        factory.createToken{value: totalPayment}("Token2", "TK2", DEFAULT_BASE_PRICE, DEFAULT_CURVE, DEFAULT_RESERVE_RATIO, DEFAULT_DESCRIPTION, DEFAULT_IMAGE_URL);
+        factory.createToken{value: totalPayment}("Token3", "TK3", DEFAULT_BASE_PRICE, DEFAULT_CURVE, DEFAULT_RESERVE_RATIO, DEFAULT_DESCRIPTION, DEFAULT_IMAGE_URL);
         vm.stopPrank();
 
         address[] memory allTokens = factory.getAllTokens();
@@ -279,13 +310,13 @@ contract LaunchpadFactoryTest is Test {
         uint256 totalPayment = CREATION_FEE + 1 ether;
 
         vm.prank(creator);
-        factory.createToken{value: totalPayment}("Creator1", "C1", DEFAULT_BASE_PRICE, DEFAULT_CURVE, DEFAULT_RESERVE_RATIO);
+        factory.createToken{value: totalPayment}("Creator1", "C1", DEFAULT_BASE_PRICE, DEFAULT_CURVE, DEFAULT_RESERVE_RATIO, DEFAULT_DESCRIPTION, DEFAULT_IMAGE_URL);
 
         vm.prank(creator);
-        factory.createToken{value: totalPayment}("Creator2", "C2", DEFAULT_BASE_PRICE, DEFAULT_CURVE, DEFAULT_RESERVE_RATIO);
+        factory.createToken{value: totalPayment}("Creator2", "C2", DEFAULT_BASE_PRICE, DEFAULT_CURVE, DEFAULT_RESERVE_RATIO, DEFAULT_DESCRIPTION, DEFAULT_IMAGE_URL);
 
         vm.prank(user1);
-        factory.createToken{value: totalPayment}("User1", "U1", DEFAULT_BASE_PRICE, DEFAULT_CURVE, DEFAULT_RESERVE_RATIO);
+        factory.createToken{value: totalPayment}("User1", "U1", DEFAULT_BASE_PRICE, DEFAULT_CURVE, DEFAULT_RESERVE_RATIO, DEFAULT_DESCRIPTION, DEFAULT_IMAGE_URL);
 
         address[] memory creatorTokens = factory.getTokensByCreator(creator);
         assertEq(creatorTokens.length, 2);
@@ -304,7 +335,9 @@ contract LaunchpadFactoryTest is Test {
                 string(abi.encodePacked("TK", vm.toString(i))),
                 DEFAULT_BASE_PRICE,
                 DEFAULT_CURVE,
-                DEFAULT_RESERVE_RATIO
+                DEFAULT_RESERVE_RATIO,
+                DEFAULT_DESCRIPTION,
+                DEFAULT_IMAGE_URL
             );
         }
         vm.stopPrank();
@@ -328,7 +361,9 @@ contract LaunchpadFactoryTest is Test {
             "SYM",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
 
         assertEq(factory.getTokenBySymbol("SYM"), tokenAddr);
@@ -398,7 +433,9 @@ contract LaunchpadFactoryTest is Test {
             "PUB",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
 
         LaunchpadToken token = LaunchpadToken(payable(tokenAddr));
@@ -418,7 +455,9 @@ contract LaunchpadFactoryTest is Test {
             "BURN",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
 
         LaunchpadToken token = LaunchpadToken(payable(tokenAddr));
@@ -447,7 +486,9 @@ contract LaunchpadFactoryTest is Test {
             "CRT",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
 
         LaunchpadToken token = LaunchpadToken(payable(tokenAddr));
@@ -463,7 +504,9 @@ contract LaunchpadFactoryTest is Test {
             "FAC",
             DEFAULT_BASE_PRICE,
             DEFAULT_CURVE,
-            DEFAULT_RESERVE_RATIO
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
 
         LaunchpadToken token = LaunchpadToken(payable(tokenAddr));
@@ -491,7 +534,9 @@ contract LaunchpadFactoryTest is Test {
             "FUZZ",
             basePrice,
             curveCoefficient,
-            reserveRatio
+            reserveRatio,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
         );
 
         assertNotEq(tokenAddr, address(0));
@@ -499,5 +544,103 @@ contract LaunchpadFactoryTest is Test {
 
         LaunchpadToken token = LaunchpadToken(payable(tokenAddr));
         assertEq(token.tonReserve(), initialDeposit);
+    }
+
+    // ============ Metadata Tests ============
+
+    function test_CreateTokenStoresDescription() public {
+        uint256 totalPayment = CREATION_FEE + 1 ether;
+
+        vm.prank(creator);
+        (address tokenAddr, ) = factory.createToken{value: totalPayment}(
+            "Desc Token",
+            "DESC",
+            DEFAULT_BASE_PRICE,
+            DEFAULT_CURVE,
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
+        );
+
+        LaunchpadToken token = LaunchpadToken(payable(tokenAddr));
+        assertEq(token.description(), DEFAULT_DESCRIPTION);
+    }
+
+    function test_CreateTokenStoresImageUrl() public {
+        uint256 totalPayment = CREATION_FEE + 1 ether;
+
+        vm.prank(creator);
+        (address tokenAddr, ) = factory.createToken{value: totalPayment}(
+            "Img Token",
+            "IMG",
+            DEFAULT_BASE_PRICE,
+            DEFAULT_CURVE,
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
+        );
+
+        LaunchpadToken token = LaunchpadToken(payable(tokenAddr));
+        assertEq(token.imageUrl(), DEFAULT_IMAGE_URL);
+    }
+
+    function test_CreateTokenFailsWithEmptyImageUrl() public {
+        uint256 totalPayment = CREATION_FEE + 1 ether;
+
+        vm.prank(creator);
+        vm.expectRevert("Image URL required");
+        factory.createToken{value: totalPayment}(
+            "No Image",
+            "NOIMG",
+            DEFAULT_BASE_PRICE,
+            DEFAULT_CURVE,
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            ""
+        );
+    }
+
+    function test_CreateTokenFailsWithTooLongDescription() public {
+        uint256 totalPayment = CREATION_FEE + 1 ether;
+
+        // Create a string longer than 512 bytes
+        bytes memory longDesc = new bytes(513);
+        for (uint256 i = 0; i < 513; i++) {
+            longDesc[i] = "a";
+        }
+
+        vm.prank(creator);
+        vm.expectRevert("Description too long");
+        factory.createToken{value: totalPayment}(
+            "Long Desc",
+            "LONG",
+            DEFAULT_BASE_PRICE,
+            DEFAULT_CURVE,
+            DEFAULT_RESERVE_RATIO,
+            string(longDesc),
+            DEFAULT_IMAGE_URL
+        );
+    }
+
+    function test_CreateTokenFailsWithTooLongImageUrl() public {
+        uint256 totalPayment = CREATION_FEE + 1 ether;
+
+        // Create a string longer than 256 bytes
+        bytes memory longUrl = new bytes(257);
+        for (uint256 i = 0; i < 257; i++) {
+            longUrl[i] = "a";
+        }
+
+        vm.prank(creator);
+        vm.expectRevert("Image URL too long");
+        factory.createToken{value: totalPayment}(
+            "Long URL",
+            "LURL",
+            DEFAULT_BASE_PRICE,
+            DEFAULT_CURVE,
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            string(longUrl)
+        );
     }
 }
