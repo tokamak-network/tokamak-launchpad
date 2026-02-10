@@ -14,6 +14,7 @@ interface ILaunchpadToken is IERC20 {
     event ReserveRatioUpdated(uint256 oldRatio, uint256 newRatio);
     event EmergencyPaused(address indexed by, string reason);
     event EmergencyUnpaused(address indexed by);
+    event MetadataUpdated(string description, string imageUrl);
 
     // View functions
     function getCurrentPrice() external view returns (uint256);
@@ -23,6 +24,8 @@ interface ILaunchpadToken is IERC20 {
     function calculateBurnReturn(uint256 tokenAmount) external view returns (uint256 tonAmount, uint256 effectivePrice);
     function creator() external view returns (address);
     function factory() external view returns (address);
+    function description() external view returns (string memory);
+    function imageUrl() external view returns (string memory);
 
     // State-changing functions
     function mint() external payable returns (uint256 tokenAmount);
@@ -30,4 +33,5 @@ interface ILaunchpadToken is IERC20 {
 
     // Admin functions (creator only)
     function updateMinReserveRatio(uint256 newRatio) external;
+    function updateMetadata(string calldata _description, string calldata _imageUrl) external;
 }

@@ -35,6 +35,9 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     uint256 public immutable basePrice; // Starting price in TON wei
     uint256 public immutable curveCoefficient; // Price increase rate
 
+    // ============ Metadata ============
+    string public tokenDescription;
+    string public override imageUrl;
 
     // ============ State Variables ============
     uint256 public minReserveRatio; // In basis points (8000 = 80%)
@@ -58,18 +61,25 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         address _creator,
         uint256 _basePrice,
         uint256 _curveCoefficient,
-        uint256 _minReserveRatio
+        uint256 _minReserveRatio,
+        string memory _description,
+        string memory _imageUrl
     ) ERC20(_name, _symbol) {
         require(_creator != address(0), "Invalid creator");
         require(_basePrice > 0, "Base price must be > 0");
         require(_minReserveRatio >= MIN_RESERVE_RATIO_FLOOR, "Reserve ratio too low");
         require(_minReserveRatio <= MAX_RESERVE_RATIO, "Reserve ratio too high");
+        require(bytes(_description).length <= 512, "Description too long");
+        require(bytes(_imageUrl).length > 0, "Image URL required");
+        require(bytes(_imageUrl).length <= 256, "Image URL too long");
 
         factory = msg.sender;
         creator = _creator;
         basePrice = _basePrice;
         curveCoefficient = _curveCoefficient;
         minReserveRatio = _minReserveRatio;
+        tokenDescription = _description;
+        imageUrl = _imageUrl;
     }
 
     // ============ Modifiers ============
@@ -304,6 +314,29 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     }
 
     // ============ Admin Functions ============
+
+    /**
+     * @notice Get token description
+     */
+    function description() external view override returns (string memory) {
+        return tokenDescription;
+    }
+
+    /**
+     * @notice Update token metadata (creator only)
+     * @param _description New description (max 512 bytes, can be empty)
+     * @param _imageUrl New image URL (max 256 bytes, must be non-empty)
+     */
+    function updateMetadata(string calldata _description, string calldata _imageUrl) external override onlyCreator {
+        require(bytes(_description).length <= 512, "Description too long");
+        require(bytes(_imageUrl).length > 0, "Image URL required");
+        require(bytes(_imageUrl).length <= 256, "Image URL too long");
+
+        tokenDescription = _description;
+        imageUrl = _imageUrl;
+
+        emit ILaunchpadToken.MetadataUpdated(_description, _imageUrl);
+    }
 
     /**
      * @notice Update minimum reserve ratio (creator only)

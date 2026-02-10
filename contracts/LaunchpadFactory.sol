@@ -51,7 +51,9 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         uint256 curveCoefficient,
         uint256 minReserveRatio,
         uint256 initialMint,
-        uint256 timestamp
+        uint256 timestamp,
+        string description,
+        string imageUrl
     );
 
     event CreationFeeUpdated(uint256 oldFee, uint256 newFee);
@@ -96,7 +98,9 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         string calldata symbol,
         uint256 basePrice,
         uint256 curveCoefficient,
-        uint256 minReserveRatio
+        uint256 minReserveRatio,
+        string calldata description,
+        string calldata imageUrl
     ) external payable nonReentrant returns (address token, uint256 tokensMinted) {
         // Validation
         require(bytes(name).length > 0 && bytes(name).length <= 64, "Invalid name length");
@@ -119,7 +123,9 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
             msg.sender,
             basePrice,
             curveCoefficient,
-            minReserveRatio
+            minReserveRatio,
+            description,
+            imageUrl
         );
 
         token = address(newToken);
@@ -149,7 +155,9 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
             curveCoefficient,
             minReserveRatio,
             initialDeposit,
-            block.timestamp
+            block.timestamp,
+            description,
+            imageUrl
         );
     }
 

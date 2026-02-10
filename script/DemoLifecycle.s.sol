@@ -102,7 +102,9 @@ contract DemoLifecycleScript is Script {
             "DMEME",
             basePrice,
             curveCoefficient,
-            minReserveRatio
+            minReserveRatio,
+            "A demo meme token for testing the launchpad lifecycle",
+            "https://example.com/dmeme.png"
         );
 
         token = LaunchpadToken(payable(tokenAddr));
