@@ -80,17 +80,14 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
      * @param basePrice Starting price per token in TON wei
      * @param curveCoefficient Rate of price increase (scaled by 1e18)
      * @param minReserveRatio Minimum reserve ratio in basis points (e.g., 8000 = 80%)
+     * @param description Token description (max 512 bytes)
+     * @param imageUrl Token image URL (max 256 bytes, must be non-empty)
      * @return token Address of the newly created token
      * @return tokensMinted Amount of tokens minted to creator
      *
      * @dev The msg.value must cover:
-     *      - creationFee (goes to feeRecipient)
+     *      - creationFee (accumulated in factory, withdrawn by feeRecipient)
      *      - initialDeposit (goes to token reserve, creator gets tokens)
-     *
-     * Example parameters for a typical launch:
-     * - basePrice: 1e15 (0.001 TON per token initially)
-     * - curveCoefficient: 1e12 (gentle curve)
-     * - minReserveRatio: 8000 (80% reserve)
      */
     function createToken(
         string calldata name,
@@ -162,6 +159,7 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
 
     /**
      * @notice Get all token addresses
+     * @return Array of all deployed token addresses
      */
     function getAllTokens() external view returns (address[] memory) {
         return allTokens;
@@ -169,13 +167,17 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
 
     /**
      * @notice Get tokens created by a specific address
+     * @param creator Address of the token creator
+     * @return Array of token addresses created by the given address
      */
     function getTokensByCreator(address creator) external view returns (address[] memory) {
         return tokensByCreator[creator];
     }
 
     /**
-     * @notice Get token by symbol
+     * @notice Get token address by symbol (case-sensitive)
+     * @param symbol Token symbol to look up
+     * @return Token address, or address(0) if not found
      */
     function getTokenBySymbol(string calldata symbol) external view returns (address) {
         return tokenBySymbol[keccak256(bytes(symbol))];
@@ -183,8 +185,9 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
 
     /**
      * @notice Get paginated list of tokens
-     * @param offset Starting index
-     * @param limit Maximum tokens to return
+     * @param offset Starting index in the allTokens array
+     * @param limit Maximum number of tokens to return
+     * @return tokens Array of token addresses (may be shorter than limit if near end)
      */
     function getTokensPaginated(uint256 offset, uint256 limit) external view returns (address[] memory tokens) {
         require(offset < allTokens.length || allTokens.length == 0, "Offset out of bounds");
@@ -203,8 +206,9 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Calculate creation cost
-     * @param initialMintAmount Desired initial TON to deposit
+     * @notice Calculate total TON required to create a token
+     * @param initialMintAmount Desired initial TON deposit for the reserve
+     * @return Total cost in TON wei (creationFee + initialMintAmount)
      */
     function calculateCreationCost(uint256 initialMintAmount) external view returns (uint256) {
         require(initialMintAmount >= MIN_INITIAL_MINT, "Initial mint too low");
@@ -214,7 +218,8 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
     // ============ Admin Functions ============
 
     /**
-     * @notice Update creation fee
+     * @notice Update creation fee (owner only)
+     * @param newFee New fee in TON wei
      */
     function setCreationFee(uint256 newFee) external onlyOwner {
         uint256 oldFee = creationFee;
@@ -223,7 +228,8 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Update fee recipient
+     * @notice Update fee recipient (owner only)
+     * @param newRecipient New address to receive creation fees and protocol fees
      */
     function setFeeRecipient(address newRecipient) external onlyOwner {
         require(newRecipient != address(0), "Invalid recipient");
@@ -233,7 +239,9 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Withdraw accumulated fees (backup)
+     * @notice Withdraw accumulated creation fees to feeRecipient (owner only)
+     * @dev Sends the entire factory balance to feeRecipient.
+     *      Creation fees accumulate in the factory via pull pattern.
      */
     function withdrawFees() external onlyOwner {
         uint256 balance = address(this).balance;
