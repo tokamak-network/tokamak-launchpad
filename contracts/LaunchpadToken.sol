@@ -102,14 +102,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
      * @dev Price = basePrice + (curveCoefficient × supply² / PRECISION²)
      */
     function getCurrentPrice() public view override returns (uint256) {
-        uint256 supply = totalSupply();
-        if (supply == 0) {
-            return basePrice;
-        }
-        // P = basePrice + (curveCoefficient × supply²) / PRECISION²
-        // Using PRECISION² to maintain precision with squared supply
-        uint256 curveComponent = (curveCoefficient * supply * supply) / (PRECISION * PRECISION);
-        return basePrice + curveComponent;
+        return _calculatePriceAtSupply(totalSupply());
     }
 
     /**
