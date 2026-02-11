@@ -152,9 +152,9 @@ contract LaunchpadFactoryTest is Test {
         assertEq(token.tonReserve(), initialDeposit);
     }
 
-    function test_CreateTokenTransfersFeeToRecipient() public {
+    function test_CreateTokenAccumulatesFeeInFactory() public {
         uint256 totalPayment = CREATION_FEE + 1 ether;
-        uint256 balanceBefore = feeRecipient.balance;
+        uint256 factoryBalanceBefore = address(factory).balance;
 
         vm.prank(creator);
         factory.createToken{value: totalPayment}(
@@ -167,7 +167,38 @@ contract LaunchpadFactoryTest is Test {
             DEFAULT_IMAGE_URL
         );
 
+        // Fee stays in factory (pull pattern)
+        assertEq(address(factory).balance, factoryBalanceBefore + CREATION_FEE);
+    }
+
+    function test_WithdrawFeesTransfersToRecipient() public {
+        uint256 totalPayment = CREATION_FEE + 1 ether;
+
+        vm.prank(creator);
+        factory.createToken{value: totalPayment}(
+            "Fee Token",
+            "FEE",
+            DEFAULT_BASE_PRICE,
+            DEFAULT_CURVE,
+            DEFAULT_RESERVE_RATIO,
+            DEFAULT_DESCRIPTION,
+            DEFAULT_IMAGE_URL
+        );
+
+        uint256 balanceBefore = feeRecipient.balance;
+
+        vm.expectEmit(true, true, false, false);
+        emit FeesWithdrawn(feeRecipient, CREATION_FEE);
+
+        factory.withdrawFees();
+
         assertEq(feeRecipient.balance, balanceBefore + CREATION_FEE);
+        assertEq(address(factory).balance, 0);
+    }
+
+    function test_WithdrawFeesFailsWhenNoBalance() public {
+        vm.expectRevert("No fees to withdraw");
+        factory.withdrawFees();
     }
 
     function test_CreateTokenFailsWithInsufficientPayment() public {

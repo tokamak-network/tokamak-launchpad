@@ -135,11 +135,7 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         tokensByCreator[msg.sender].push(token);
         tokenBySymbol[symbolHash] = token;
 
-        // Transfer creation fee to recipient
-        if (creationFee > 0) {
-            (bool feeSuccess, ) = payable(feeRecipient).call{value: creationFee}("");
-            require(feeSuccess, "Fee transfer failed");
-        }
+        // Creation fee stays in factory (pull pattern - feeRecipient withdraws later)
 
         // Initial mint: deposit TON and mint tokens directly to creator
         tokensMinted = newToken.factoryMint{value: initialDeposit}(msg.sender);
