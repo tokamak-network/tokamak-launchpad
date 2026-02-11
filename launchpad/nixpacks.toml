@@ -3,11 +3,11 @@ nixPkgs = ["nodejs_20"]
 
 [phases.install]
 # Use npm to install pnpm so we never touch Corepack (avoids "Cannot find matching keyid" in Nix image)
-cmds = ["npm install -g pnpm@9 && pnpm install --frozen-lockfile"]
+cmds = ["npx pnpm@9 install --frozen-lockfile"]
 
 [phases.build]
 cmds = [
-  "pnpm build",
+  "npx pnpm@9 build",
   "cp -r public .next/standalone/public",
   "cp -r .next/static .next/standalone/.next/static"
 ]
