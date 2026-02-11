@@ -57,7 +57,7 @@ contract LaunchpadFactoryTest is Test {
     }
 
     function test_DeploymentStartsWithZeroTokens() public view {
-        assertEq(factory.tokenCount(), 0);
+        assertEq(factory.getAllTokens().length, 0);
     }
 
     function test_DeploymentSetsOwner() public view {
@@ -82,7 +82,7 @@ contract LaunchpadFactoryTest is Test {
 
         assertNotEq(tokenAddr, address(0));
         assertGt(tokensMinted, 0);
-        assertEq(factory.tokenCount(), 1);
+        assertEq(factory.getAllTokens().length, 1);
     }
 
     function test_CreateTokenEmitsEvent() public {

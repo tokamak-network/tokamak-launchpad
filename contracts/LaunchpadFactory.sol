@@ -23,7 +23,6 @@ import "./LaunchpadToken.sol";
  */
 contract LaunchpadFactory is Ownable, ReentrancyGuard {
     // ============ Constants ============
-    uint256 public constant PRECISION = 1e18;
     uint256 public constant MIN_BASE_PRICE = 1e12; // 0.000001 TON minimum
     uint256 public constant MAX_BASE_PRICE = 1e24; // 1,000,000 TON maximum
     uint256 public constant MIN_RESERVE_RATIO = 5000; // 50% minimum
@@ -33,7 +32,6 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
     // ============ State Variables ============
     uint256 public creationFee; // Fee in TON to create a token
     address public feeRecipient; // Address receiving creation fees
-    uint256 public tokenCount; // Total tokens created
 
     // Registry
     address[] public allTokens;
@@ -125,7 +123,8 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
             curveCoefficient,
             minReserveRatio,
             description,
-            imageUrl
+            imageUrl,
+            feeRecipient
         );
 
         token = address(newToken);
@@ -135,7 +134,6 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         isLaunchpadToken[token] = true;
         tokensByCreator[msg.sender].push(token);
         tokenBySymbol[symbolHash] = token;
-        tokenCount++;
 
         // Transfer creation fee to recipient
         if (creationFee > 0) {
