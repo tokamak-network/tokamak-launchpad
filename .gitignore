@@ -6,9 +6,6 @@ out/
 broadcast/
 !/broadcast/*/31337/
 
-# Docs
-docs/
-
 # Dotenv file
 .env
 
