@@ -7,9 +7,9 @@ cmds = ["corepack enable && corepack prepare pnpm@9.14.2 --activate && pnpm inst
 
 [phases.build]
 cmds = [
-  "pnpm build",
-  "cp -r public .next/standalone/public",
-  "cp -r .next/static .next/standalone/.next/static"
+  "pnpm build",
+  "cp -r public .next/standalone/public",
+  "cp -r .next/static .next/standalone/.next/static"
 ]
 
 [start]
