@@ -3,15 +3,10 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
 import "../contracts/LaunchpadFactory.sol";
-import "../contracts/TONVault.sol";
 
 /**
  * @title Deploy
  * @notice Deployment script for TON-Backed Token Launchpad
- *
- * Deployment Order:
- * 1. TONVault (optional, for advanced reserve management)
- * 2. LaunchpadFactory (main entry point)
  *
  * Usage:
  * - Local: forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast
@@ -34,20 +29,9 @@ contract DeployScript is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // Step 1: Deploy TONVault (optional)
-        console.log("Step 1: Deploying TONVault...");
-        TONVault vault = new TONVault();
-        console.log("  TONVault deployed at:", address(vault));
-
-        // Step 2: Deploy LaunchpadFactory
-        console.log("Step 2: Deploying LaunchpadFactory...");
+        console.log("Deploying LaunchpadFactory...");
         LaunchpadFactory factory = new LaunchpadFactory(CREATION_FEE, deployer);
         console.log("  LaunchpadFactory deployed at:", address(factory));
-
-        // Step 3: Configure Vault
-        console.log("Step 3: Configuring TONVault...");
-        vault.setFactory(address(factory));
-        console.log("  Vault configured with factory address");
 
         vm.stopBroadcast();
 
@@ -56,7 +40,6 @@ contract DeployScript is Script {
         console.log("============================================================");
         console.log("DEPLOYMENT SUMMARY");
         console.log("============================================================");
-        console.log("TONVault:         ", address(vault));
         console.log("LaunchpadFactory: ", address(factory));
         console.log("Creation Fee:     ", CREATION_FEE / 1e18, "TON");
         console.log("Fee Recipient:    ", deployer);

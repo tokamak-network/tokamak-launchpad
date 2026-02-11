@@ -46,6 +46,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     uint256 public override tonReserve; // Total TON locked in contract
     bool public redemptionsPaused; // True if reserve ratio too low
     bool private initialized; // For factory initial mint
+    mapping(address => uint256) public override pendingFees; // Accrued fees per recipient
 
     // ============ Constructor ============
     /**
@@ -249,17 +250,8 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         // Check reserve ratio is healthy
         _checkAndUpdateRedemptionStatus();
 
-        // Transfer spread to creator
-        if (spreadAmount > 0) {
-            (bool spreadSuccess, ) = payable(creator).call{value: spreadAmount}("");
-            require(spreadSuccess, "Spread transfer failed");
-        }
-
-        // Transfer protocol fee to factory deployer
-        if (protocolAmount > 0) {
-            (bool protocolSuccess, ) = payable(protocolFeeRecipient).call{value: protocolAmount}("");
-            require(protocolSuccess, "Protocol fee transfer failed");
-        }
+        // Accrue fees (pull pattern)
+        _accrueFees(spreadAmount, protocolAmount);
 
         emit TokensMinted(msg.sender, msg.value, tokens, getCurrentPrice());
 
@@ -335,17 +327,8 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         (bool success, ) = payable(msg.sender).call{value: tonReturn}("");
         require(success, "TON transfer failed");
 
-        // Transfer spread to creator
-        if (spreadAmount > 0) {
-            (bool spreadSuccess, ) = payable(creator).call{value: spreadAmount}("");
-            require(spreadSuccess, "Spread transfer failed");
-        }
-
-        // Transfer protocol fee to factory deployer
-        if (protocolAmount > 0) {
-            (bool protocolSuccess, ) = payable(protocolFeeRecipient).call{value: protocolAmount}("");
-            require(protocolSuccess, "Protocol fee transfer failed");
-        }
+        // Accrue fees (pull pattern)
+        _accrueFees(spreadAmount, protocolAmount);
 
         _checkAndUpdateRedemptionStatus();
 
@@ -415,6 +398,22 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     }
 
     /**
+     * @notice Withdraw accrued fees (creator spread or protocol fee)
+     * @dev Anyone with pending fees can call. Uses pull pattern to prevent DoS.
+     */
+    function withdrawFees() external override nonReentrant {
+        uint256 amount = pendingFees[msg.sender];
+        require(amount > 0, "No fees to withdraw");
+
+        pendingFees[msg.sender] = 0;
+
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        require(success, "Fee withdrawal failed");
+
+        emit FeeWithdrawn(msg.sender, amount);
+    }
+
+    /**
      * @notice Deposit additional TON to restore reserve ratio
      * @dev Anyone can call this to help restore health
      */
@@ -426,6 +425,20 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     }
 
     // ============ Internal Functions ============
+
+    /**
+     * @notice Accrue fees for later withdrawal (pull pattern)
+     */
+    function _accrueFees(uint256 spreadAmount, uint256 protocolAmount) internal {
+        if (spreadAmount > 0) {
+            pendingFees[creator] += spreadAmount;
+            emit FeeAccrued(creator, spreadAmount);
+        }
+        if (protocolAmount > 0) {
+            pendingFees[protocolFeeRecipient] += protocolAmount;
+            emit FeeAccrued(protocolFeeRecipient, protocolAmount);
+        }
+    }
 
     /**
      * @notice Calculate price at a given supply level
