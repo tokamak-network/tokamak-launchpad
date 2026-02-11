@@ -1,0 +1,11 @@
+[
+  { "slug": "overview", "title": "Overview", "file": "01-overview.md" },
+  { "slug": "how-it-works", "title": "How It Works", "file": "02-how-it-works.md" },
+  { "slug": "creators", "title": "For Token Creators", "file": "03-creators.md" },
+  { "slug": "traders", "title": "For Traders", "file": "04-traders.md" },
+  { "slug": "fees", "title": "Fees", "file": "05-fees.md" },
+  { "slug": "reserve-safety", "title": "Reserve Ratio & Safety", "file": "06-reserve-safety.md" },
+  { "slug": "security", "title": "Security", "file": "07-security.md" },
+  { "slug": "technical-reference", "title": "Technical Reference", "file": "08-technical-reference.md" },
+  { "slug": "faq", "title": "FAQ", "file": "09-faq.md" }
+]

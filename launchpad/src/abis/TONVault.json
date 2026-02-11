@@ -1,0 +1,23 @@
+[
+  {
+    "type": "function",
+    "name": "getReserve",
+    "stateMutability": "view",
+    "inputs": [{ "name": "token", "type": "address", "internalType": "address" }],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "getTotalReserves",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "isAuthorized",
+    "stateMutability": "view",
+    "inputs": [{ "name": "token", "type": "address", "internalType": "address" }],
+    "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }]
+  }
+]

@@ -1,0 +1,375 @@
+[
+  {
+    "type": "function",
+    "name": "name",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "string" }]
+  },
+  {
+    "type": "function",
+    "name": "symbol",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "string" }]
+  },
+  {
+    "type": "function",
+    "name": "decimals",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint8" }]
+  },
+  {
+    "type": "function",
+    "name": "totalSupply",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "balanceOf",
+    "stateMutability": "view",
+    "inputs": [{ "name": "account", "type": "address" }],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "allowance",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "owner", "type": "address" },
+      { "name": "spender", "type": "address" }
+    ],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "approve",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "spender", "type": "address" },
+      { "name": "value", "type": "uint256" }
+    ],
+    "outputs": [{ "name": "", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "transfer",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "to", "type": "address" },
+      { "name": "value", "type": "uint256" }
+    ],
+    "outputs": [{ "name": "", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "transferFrom",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "from", "type": "address" },
+      { "name": "to", "type": "address" },
+      { "name": "value", "type": "uint256" }
+    ],
+    "outputs": [{ "name": "", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "description",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "string" }]
+  },
+  {
+    "type": "function",
+    "name": "tokenDescription",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "string" }]
+  },
+  {
+    "type": "function",
+    "name": "imageUrl",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "string" }]
+  },
+  {
+    "type": "function",
+    "name": "creator",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address" }]
+  },
+  {
+    "type": "function",
+    "name": "factory",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address" }]
+  },
+  {
+    "type": "function",
+    "name": "protocolFeeRecipient",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "address" }]
+  },
+  {
+    "type": "function",
+    "name": "basePrice",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "curveCoefficient",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "getCurrentPrice",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "getReserveRatio",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "tonReserve",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "minReserveRatio",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "totalAccruedFees",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "pendingFees",
+    "stateMutability": "view",
+    "inputs": [{ "name": "", "type": "address" }],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "paused",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "redemptionsPaused",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "BUY_SELL_SPREAD",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "PROTOCOL_FEE",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "PRECISION",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "MAX_RESERVE_RATIO",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "MIN_RESERVE_RATIO_FLOOR",
+    "stateMutability": "view",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "calculateMintAmount",
+    "stateMutability": "view",
+    "inputs": [{ "name": "tonAmount", "type": "uint256" }],
+    "outputs": [
+      { "name": "tokenAmount", "type": "uint256" },
+      { "name": "effectivePrice", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "calculateBurnReturn",
+    "stateMutability": "view",
+    "inputs": [{ "name": "tokenAmount", "type": "uint256" }],
+    "outputs": [
+      { "name": "tonAmount", "type": "uint256" },
+      { "name": "effectivePrice", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "mint",
+    "stateMutability": "payable",
+    "inputs": [],
+    "outputs": [{ "name": "tokenAmount", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "burn",
+    "stateMutability": "nonpayable",
+    "inputs": [{ "name": "tokenAmount", "type": "uint256" }],
+    "outputs": [{ "name": "tonAmount", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "factoryMint",
+    "stateMutability": "payable",
+    "inputs": [{ "name": "recipient", "type": "address" }],
+    "outputs": [{ "name": "tokenAmount", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "updateMinReserveRatio",
+    "stateMutability": "nonpayable",
+    "inputs": [{ "name": "newRatio", "type": "uint256" }],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "updateMetadata",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "_description", "type": "string" },
+      { "name": "_imageUrl", "type": "string" }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "depositReserve",
+    "stateMutability": "payable",
+    "inputs": [],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "withdrawFees",
+    "stateMutability": "nonpayable",
+    "inputs": [],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "emergencyPause",
+    "stateMutability": "nonpayable",
+    "inputs": [{ "name": "reason", "type": "string" }],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "emergencyUnpause",
+    "stateMutability": "nonpayable",
+    "inputs": [],
+    "outputs": []
+  },
+  {
+    "type": "event",
+    "name": "TokensMinted",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "user", "type": "address" },
+      { "indexed": false, "name": "tonDeposited", "type": "uint256" },
+      { "indexed": false, "name": "tokensMinted", "type": "uint256" },
+      { "indexed": false, "name": "newPrice", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "TokensBurned",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "user", "type": "address" },
+      { "indexed": false, "name": "tokensBurned", "type": "uint256" },
+      { "indexed": false, "name": "tonReturned", "type": "uint256" },
+      { "indexed": false, "name": "newPrice", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "Transfer",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "from", "type": "address" },
+      { "indexed": true, "name": "to", "type": "address" },
+      { "indexed": false, "name": "value", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "Approval",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "owner", "type": "address" },
+      { "indexed": true, "name": "spender", "type": "address" },
+      { "indexed": false, "name": "value", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "MetadataUpdated",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": false, "name": "description", "type": "string" },
+      { "indexed": false, "name": "imageUrl", "type": "string" }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "ReserveRatioUpdated",
+    "anonymous": false,
+    "inputs": [
+      { "indexed": false, "name": "oldRatio", "type": "uint256" },
+      { "indexed": false, "name": "newRatio", "type": "uint256" }
+    ]
+  },
+  {
+    "type": "receive",
+    "stateMutability": "payable"
+  }
+]
