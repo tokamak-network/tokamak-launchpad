@@ -2,8 +2,8 @@
 nixPkgs = ["nodejs_20"]
 
 [phases.install]
-# Pin pnpm version to avoid Corepack "Cannot find matching keyid" when verifying pnpm@latest
-cmds = ["corepack enable && corepack prepare pnpm@9.14.2 --activate && pnpm install --frozen-lockfile"]
+# Use npm to install pnpm so we never touch Corepack (avoids "Cannot find matching keyid" in Nix image)
+cmds = ["npm install -g pnpm@9 && pnpm install --frozen-lockfile"]
 
 [phases.build]
 cmds = [
