@@ -21,6 +21,7 @@ interface ILaunchpadToken is IERC20 {
 
     // View functions
     function pendingFees(address account) external view returns (uint256);
+    function totalAccruedFees() external view returns (uint256);
     function getCurrentPrice() external view returns (uint256);
     function getReserveRatio() external view returns (uint256);
     function tonReserve() external view returns (uint256);

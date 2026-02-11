@@ -47,6 +47,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     bool public redemptionsPaused; // True if reserve ratio too low
     bool private initialized; // For factory initial mint
     mapping(address => uint256) public override pendingFees; // Accrued fees per recipient
+    uint256 public override totalAccruedFees; // Total unclaimed fees in contract
 
     // ============ Constructor ============
     /**
@@ -399,6 +400,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         require(amount > 0, "No fees to withdraw");
 
         pendingFees[msg.sender] = 0;
+        totalAccruedFees -= amount;
 
         (bool success, ) = payable(msg.sender).call{value: amount}("");
         require(success, "Fee withdrawal failed");
@@ -425,10 +427,12 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     function _accrueFees(uint256 spreadAmount, uint256 protocolAmount) internal {
         if (spreadAmount > 0) {
             pendingFees[creator] += spreadAmount;
+            totalAccruedFees += spreadAmount;
             emit FeeAccrued(creator, spreadAmount);
         }
         if (protocolAmount > 0) {
             pendingFees[protocolFeeRecipient] += protocolAmount;
+            totalAccruedFees += protocolAmount;
             emit FeeAccrued(protocolFeeRecipient, protocolAmount);
         }
     }
