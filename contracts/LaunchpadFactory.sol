@@ -27,6 +27,7 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
     uint256 public constant MAX_BASE_PRICE = 1e24; // 1,000,000 TON maximum
     uint256 public constant MIN_RESERVE_RATIO = 5000; // 50% minimum
     uint256 public constant MAX_RESERVE_RATIO = 10000; // 100% maximum
+    uint256 public constant MAX_CURVE_COEFFICIENT = 1e18; // Maximum curve steepness
     uint256 public constant MIN_INITIAL_MINT = 1e15; // Minimum initial TON deposit
 
     // ============ State Variables ============
@@ -104,6 +105,7 @@ contract LaunchpadFactory is Ownable, ReentrancyGuard {
         require(bytes(name).length > 0 && bytes(name).length <= 64, "Invalid name length");
         require(bytes(symbol).length > 0 && bytes(symbol).length <= 16, "Invalid symbol length");
         require(basePrice >= MIN_BASE_PRICE && basePrice <= MAX_BASE_PRICE, "Invalid base price");
+        require(curveCoefficient <= MAX_CURVE_COEFFICIENT, "Curve coefficient too high");
         require(minReserveRatio >= MIN_RESERVE_RATIO && minReserveRatio <= MAX_RESERVE_RATIO, "Invalid reserve ratio");
 
         // Check symbol uniqueness
