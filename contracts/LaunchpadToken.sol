@@ -13,8 +13,8 @@ import "./interfaces/ILaunchpadToken.sol";
  *
  * BACKING MODEL:
  * - Price follows: P = basePrice + (curveCoefficient × supply²)
- * - Minimum reserve ratio enforced (default 80%)
- * - Buy/sell spread provides protocol sustainability
+ * - Minimum reserve ratio enforced (floor 50%)
+ * - 0.5% creator spread + 0.1% protocol fee on mint and burn
  *
  * SECURITY:
  * - ReentrancyGuard on all state-changing functions
@@ -33,7 +33,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     // ============ Immutables ============
     address public immutable override factory;
     address public immutable override creator;
-    address public immutable protocolFeeRecipient; // Factory deployer address
+    address public immutable protocolFeeRecipient; // Address receiving protocol fees
     uint256 public immutable basePrice; // Starting price in TON wei
     uint256 public immutable curveCoefficient; // Price increase rate
 
@@ -58,6 +58,9 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
      * @param _basePrice Initial price per token in TON wei
      * @param _curveCoefficient Rate of price increase (scaled by 1e18)
      * @param _minReserveRatio Minimum reserve ratio in basis points
+     * @param _description Token description (max 512 bytes)
+     * @param _imageUrl Token image URL (max 256 bytes, must be non-empty)
+     * @param _protocolFeeRecipient Address to receive protocol fees
      */
     constructor(
         string memory _name,
@@ -109,6 +112,8 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     /**
      * @notice Get the current reserve ratio
      * @return Reserve ratio in basis points (10000 = 100%)
+     * @dev Uses the bonding curve integral (actual cost basis) as the denominator,
+     *      not supply × currentPrice, to avoid understating the ratio
      */
     function getReserveRatio() public view override returns (uint256) {
         uint256 supply = totalSupply();
@@ -116,13 +121,19 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
             return MAX_RESERVE_RATIO; // 100% when no supply
         }
 
-        uint256 theoreticalValue = (supply * getCurrentPrice()) / PRECISION;
+        uint256 theoreticalValue = _integrateFromZero(supply);
         if (theoreticalValue == 0) {
             return MAX_RESERVE_RATIO;
         }
 
-        return (tonReserve * MAX_RESERVE_RATIO) / theoreticalValue;
+        uint256 ratio = (tonReserve * MAX_RESERVE_RATIO) / theoreticalValue;
+        // Cap at 100% — above means overcollateralized
+        if (ratio > MAX_RESERVE_RATIO) {
+            return MAX_RESERVE_RATIO;
+        }
+        return ratio;
     }
+
 
     /**
      * @notice Calculate tokens received for a given TON deposit
@@ -161,7 +172,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     /**
      * @notice Calculate TON returned for burning tokens
      * @param tokenAmount Amount of tokens to burn
-     * @return tonAmount TON that would be returned (minus spread)
+     * @return tonAmount TON that would be returned (minus spread and protocol fee)
      * @return effectivePrice Average price per token for this sale
      */
     function calculateBurnReturn(uint256 tokenAmount) public view override returns (uint256 tonAmount, uint256 effectivePrice) {
@@ -170,6 +181,11 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
 
     /**
      * @notice Internal burn return calculation that also returns fee amounts
+     * @param tokenAmount Amount of tokens to burn
+     * @return tonAmount Net TON returned to the user after fees
+     * @return effectivePrice Average price per token for this sale
+     * @return spreadAmount Creator spread fee deducted
+     * @return protocolAmount Protocol fee deducted
      */
     function _calculateBurnReturn(uint256 tokenAmount)
         internal
@@ -217,12 +233,9 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     // ============ State-Changing Functions ============
 
     /**
-     * @notice 
-     * 
-     * 
-     *  tokens by depositing TON
+     * @notice Mint tokens by depositing TON
      * @return tokenAmount Amount of tokens minted
-     * @dev Follows bonding curve pricing, updates reserve
+     * @dev Deducts creator spread and protocol fee before calculating mint amount
      */
     function mint() external payable override nonReentrant whenNotPaused returns (uint256 tokenAmount) {
         require(msg.value > 0, "Must send TON");
@@ -275,8 +288,8 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         // Mint tokens to recipient (creator)
         _mint(recipient, tokens);
 
-        // Check reserve ratio is healthy
-        _checkAndUpdateRedemptionStatus();
+        // Ensure reserve ratio is healthy at creation
+        require(getReserveRatio() >= minReserveRatio, "Initial reserve ratio too low");
 
         emit TokensMinted(recipient, msg.value, tokens, getCurrentPrice());
 
@@ -287,7 +300,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
      * @notice Burn tokens to redeem TON
      * @param tokenAmount Amount of tokens to burn
      * @return tonAmount Amount of TON returned
-     * @dev Subject to reserve ratio requirements and spread
+     * @dev Subject to reserve ratio requirements, creator spread, and protocol fee
      */
     function burn(uint256 tokenAmount) external override nonReentrant whenNotPaused returns (uint256 tonAmount) {
         require(!redemptionsPaused, "Redemptions paused - low reserve");
@@ -304,8 +317,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         uint256 postBurnSupply = totalSupply() - tokenAmount;
         if (postBurnSupply > 0) {
             uint256 postBurnReserve = tonReserve - totalDeduction;
-            uint256 postBurnPrice = _calculatePriceAtSupply(postBurnSupply);
-            uint256 theoreticalValue = (postBurnSupply * postBurnPrice) / PRECISION;
+            uint256 theoreticalValue = _integrateFromZero(postBurnSupply);
 
             if (theoreticalValue > 0) {
                 uint256 postBurnRatio = (postBurnReserve * MAX_RESERVE_RATIO) / theoreticalValue;
@@ -331,10 +343,11 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         return tonReturn;
     }
 
-    // ============ Admin Functions ============
+    // ============ Creator Functions ============
 
     /**
      * @notice Get token description
+     * @return Token description string
      */
     function description() external view override returns (string memory) {
         return tokenDescription;
@@ -376,6 +389,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     /**
      * @notice Emergency pause (creator only)
      * @param reason Reason for pausing
+     * @dev Blocks both minting and burning. Use emergencyUnpause to resume.
      */
     function emergencyPause(string calldata reason) external onlyCreator {
         _pause();
@@ -384,6 +398,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
 
     /**
      * @notice Unpause after emergency (creator only)
+     * @dev Requires reserve ratio to be at or above minReserveRatio before unpausing
      */
     function emergencyUnpause() external onlyCreator {
         require(getReserveRatio() >= minReserveRatio, "Reserve ratio too low");
@@ -391,9 +406,12 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         emit EmergencyUnpaused(msg.sender);
     }
 
+    // ============ Public Functions ============
+
     /**
      * @notice Withdraw accrued fees (creator spread or protocol fee)
-     * @dev Anyone with pending fees can call. Uses pull pattern to prevent DoS.
+     * @dev Callable by any address with a non-zero pendingFees balance.
+     *      Uses pull pattern to prevent DoS via failed transfers.
      */
     function withdrawFees() external override nonReentrant {
         uint256 amount = pendingFees[msg.sender];
@@ -409,8 +427,10 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     }
 
     /**
-     * @notice Deposit additional TON to restore reserve ratio
-     * @dev Anyone can call this to help restore health
+     * @notice Deposit additional TON to increase the reserve ratio
+     * @dev Anyone can call this to help restore health.
+     *      Deposited TON beyond the 100% ratio threshold cannot be withdrawn
+     *      and is effectively a permanent donation to the reserve.
      */
     function depositReserve() external payable nonReentrant {
         require(msg.value > 0, "Must send TON");
@@ -423,6 +443,8 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
 
     /**
      * @notice Accrue fees for later withdrawal (pull pattern)
+     * @param spreadAmount Creator spread fee to accrue
+     * @param protocolAmount Protocol fee to accrue
      */
     function _accrueFees(uint256 spreadAmount, uint256 protocolAmount) internal {
         if (spreadAmount > 0) {
@@ -439,6 +461,9 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
 
     /**
      * @notice Calculate price at a given supply level
+     * @param supply Token supply to evaluate the bonding curve at
+     * @return Price in TON wei at the given supply
+     * @dev P(supply) = basePrice + curveCoefficient × supply² / PRECISION²
      */
     function _calculatePriceAtSupply(uint256 supply) internal view returns (uint256) {
         if (supply == 0) {
@@ -449,7 +474,23 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     }
 
     /**
+     * @notice Integrate bonding curve from 0 to supply (total cost basis)
+     * @param supply Upper bound of the integration (token supply)
+     * @return Total theoretical value in TON wei
+     * @dev ∫₀ˢ P(s) ds = basePrice×S/PRECISION + curveCoefficient×S³/(3×PRECISION³)
+     */
+    function _integrateFromZero(uint256 supply) internal view returns (uint256) {
+        if (supply == 0) return 0;
+        uint256 basePart = (supply * basePrice) / PRECISION;
+        uint256 curveComponent = (curveCoefficient * supply * supply) / (PRECISION * PRECISION);
+        uint256 curvePart = (curveComponent * supply) / (3 * PRECISION);
+        return basePart + curvePart;
+    }
+
+    /**
      * @notice Check reserve ratio and update redemption status
+     * @dev Pauses redemptions (burns) if ratio drops below minReserveRatio,
+     *      and unpauses them when ratio is restored. Does not affect minting.
      */
     function _checkAndUpdateRedemptionStatus() internal {
         uint256 ratio = getReserveRatio();
@@ -462,6 +503,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
 
     // ============ Receive Function ============
 
+    /// @notice Rejects direct TON transfers. Use mint() or depositReserve() instead.
     receive() external payable {
         revert("Use depositReserve()");
     }
