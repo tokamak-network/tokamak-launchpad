@@ -10,7 +10,7 @@ broadcast/
 .env
 
 # Dependencies
-lib/
+/lib/
 
 # Coverage
 lcov.info
