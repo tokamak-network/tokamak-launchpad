@@ -14,7 +14,7 @@ import "../contracts/LaunchpadFactory.sol";
  */
 contract DeployScript is Script {
     // Configuration
-    uint256 public constant CREATION_FEE = 0.01 ether; // 0.01 TON
+    uint256 public constant CREATION_FEE = 10 ether; // 10 TON
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
