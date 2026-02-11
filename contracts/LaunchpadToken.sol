@@ -27,11 +27,13 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     uint256 public constant PRECISION = 1e18;
     uint256 public constant MAX_RESERVE_RATIO = 10000; // 100% in basis points
     uint256 public constant MIN_RESERVE_RATIO_FLOOR = 5000; // 50% minimum allowed setting
-    uint256 public constant BUY_SELL_SPREAD = 300; // 3% spread in basis points
+    uint256 public constant BUY_SELL_SPREAD = 50; // 0.5% creator spread in basis points
+    uint256 public constant PROTOCOL_FEE = 10; // 0.1% protocol fee in basis points
 
     // ============ Immutables ============
     address public immutable override factory;
     address public immutable override creator;
+    address public immutable protocolFeeRecipient; // Factory deployer address
     uint256 public immutable basePrice; // Starting price in TON wei
     uint256 public immutable curveCoefficient; // Price increase rate
 
@@ -41,7 +43,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
 
     // ============ State Variables ============
     uint256 public minReserveRatio; // In basis points (8000 = 80%)
-    uint256 public tonReserve; // Total TON locked in contract
+    uint256 public override tonReserve; // Total TON locked in contract
     bool public redemptionsPaused; // True if reserve ratio too low
     bool private initialized; // For factory initial mint
 
@@ -63,7 +65,8 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         uint256 _curveCoefficient,
         uint256 _minReserveRatio,
         string memory _description,
-        string memory _imageUrl
+        string memory _imageUrl,
+        address _protocolFeeRecipient
     ) ERC20(_name, _symbol) {
         require(_creator != address(0), "Invalid creator");
         require(_basePrice > 0, "Base price must be > 0");
@@ -72,9 +75,11 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         require(bytes(_description).length <= 512, "Description too long");
         require(bytes(_imageUrl).length > 0, "Image URL required");
         require(bytes(_imageUrl).length <= 256, "Image URL too long");
+        require(_protocolFeeRecipient != address(0), "Invalid protocol fee recipient");
 
         factory = msg.sender;
         creator = _creator;
+        protocolFeeRecipient = _protocolFeeRecipient;
         basePrice = _basePrice;
         curveCoefficient = _curveCoefficient;
         minReserveRatio = _minReserveRatio;
@@ -125,13 +130,6 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     }
 
     /**
-     * @notice Get total TON locked in reserve
-     */
-    function getTonReserve() external view override returns (uint256) {
-        return tonReserve;
-    }
-
-    /**
      * @notice Calculate tokens received for a given TON deposit
      * @param tonAmount Amount of TON to deposit
      * @return tokenAmount Tokens that would be minted
@@ -141,11 +139,6 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         require(tonAmount > 0, "Amount must be > 0");
 
         uint256 currentSupply = totalSupply();
-        uint256 currentPrice = getCurrentPrice();
-
-        // For small purchases relative to supply, use simple division
-        // For larger purchases, we need to integrate the curve
-        // Using numerical approximation: split into small steps
 
         uint256 remainingTon = tonAmount;
         uint256 totalTokens = 0;
@@ -167,7 +160,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         }
 
         tokenAmount = totalTokens;
-        effectivePrice = totalTokens > 0 ? (tonAmount * PRECISION) / totalTokens : currentPrice;
+        effectivePrice = (tonAmount * PRECISION) / totalTokens;
     }
 
     /**
@@ -177,6 +170,17 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
      * @return effectivePrice Average price per token for this sale
      */
     function calculateBurnReturn(uint256 tokenAmount) public view override returns (uint256 tonAmount, uint256 effectivePrice) {
+        (tonAmount, effectivePrice, , ) = _calculateBurnReturn(tokenAmount);
+    }
+
+    /**
+     * @notice Internal burn return calculation that also returns fee amounts
+     */
+    function _calculateBurnReturn(uint256 tokenAmount)
+        internal
+        view
+        returns (uint256 tonAmount, uint256 effectivePrice, uint256 spreadAmount, uint256 protocolAmount)
+    {
         require(tokenAmount > 0, "Amount must be > 0");
         require(tokenAmount <= totalSupply(), "Exceeds supply");
 
@@ -200,13 +204,16 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
             remainingTokens -= stepTokens;
         }
 
-        // Apply sell spread
-        uint256 spreadDeduction = (totalTon * BUY_SELL_SPREAD) / MAX_RESERVE_RATIO;
-        tonAmount = totalTon - spreadDeduction;
+        // Apply fees
+        spreadAmount = (totalTon * BUY_SELL_SPREAD) / MAX_RESERVE_RATIO;
+        protocolAmount = (totalTon * PROTOCOL_FEE) / MAX_RESERVE_RATIO;
+        tonAmount = totalTon - spreadAmount - protocolAmount;
 
         // Ensure we don't return more than reserve
         if (tonAmount > tonReserve) {
             tonAmount = tonReserve;
+            spreadAmount = 0;
+            protocolAmount = 0;
         }
 
         effectivePrice = tokenAmount > 0 ? (tonAmount * PRECISION) / tokenAmount : 0;
@@ -215,24 +222,44 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
     // ============ State-Changing Functions ============
 
     /**
-     * @notice Mint tokens by depositing TON
+     * @notice 
+     * 
+     * 
+     *  tokens by depositing TON
      * @return tokenAmount Amount of tokens minted
      * @dev Follows bonding curve pricing, updates reserve
      */
     function mint() external payable override nonReentrant whenNotPaused returns (uint256 tokenAmount) {
         require(msg.value > 0, "Must send TON");
 
-        (uint256 tokens, ) = calculateMintAmount(msg.value);
+        // Deduct fees
+        uint256 spreadAmount = (msg.value * BUY_SELL_SPREAD) / MAX_RESERVE_RATIO;
+        uint256 protocolAmount = (msg.value * PROTOCOL_FEE) / MAX_RESERVE_RATIO;
+        uint256 depositAmount = msg.value - spreadAmount - protocolAmount;
+
+        (uint256 tokens, ) = calculateMintAmount(depositAmount);
         require(tokens > 0, "Would mint 0 tokens");
 
         // Update state before external calls
-        tonReserve += msg.value;
+        tonReserve += depositAmount;
 
         // Mint tokens to user
         _mint(msg.sender, tokens);
 
         // Check reserve ratio is healthy
         _checkAndUpdateRedemptionStatus();
+
+        // Transfer spread to creator
+        if (spreadAmount > 0) {
+            (bool spreadSuccess, ) = payable(creator).call{value: spreadAmount}("");
+            require(spreadSuccess, "Spread transfer failed");
+        }
+
+        // Transfer protocol fee to factory deployer
+        if (protocolAmount > 0) {
+            (bool protocolSuccess, ) = payable(protocolFeeRecipient).call{value: protocolAmount}("");
+            require(protocolSuccess, "Protocol fee transfer failed");
+        }
 
         emit TokensMinted(msg.sender, msg.value, tokens, getCurrentPrice());
 
@@ -281,14 +308,16 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         require(tokenAmount > 0, "Amount must be > 0");
         require(balanceOf(msg.sender) >= tokenAmount, "Insufficient balance");
 
-        (uint256 tonReturn, ) = calculateBurnReturn(tokenAmount);
+        (uint256 tonReturn, , uint256 spreadAmount, uint256 protocolAmount) = _calculateBurnReturn(tokenAmount);
         require(tonReturn > 0, "Would return 0 TON");
-        require(tonReturn <= tonReserve, "Insufficient reserve");
+
+        uint256 totalDeduction = tonReturn + spreadAmount + protocolAmount;
+        require(totalDeduction <= tonReserve, "Insufficient reserve");
 
         // Check that post-burn reserve ratio stays healthy
         uint256 postBurnSupply = totalSupply() - tokenAmount;
         if (postBurnSupply > 0) {
-            uint256 postBurnReserve = tonReserve - tonReturn;
+            uint256 postBurnReserve = tonReserve - totalDeduction;
             uint256 postBurnPrice = _calculatePriceAtSupply(postBurnSupply);
             uint256 theoreticalValue = (postBurnSupply * postBurnPrice) / PRECISION;
 
@@ -299,12 +328,24 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         }
 
         // Update state before external calls
-        tonReserve -= tonReturn;
+        tonReserve -= totalDeduction;
         _burn(msg.sender, tokenAmount);
 
         // Transfer TON to user
         (bool success, ) = payable(msg.sender).call{value: tonReturn}("");
         require(success, "TON transfer failed");
+
+        // Transfer spread to creator
+        if (spreadAmount > 0) {
+            (bool spreadSuccess, ) = payable(creator).call{value: spreadAmount}("");
+            require(spreadSuccess, "Spread transfer failed");
+        }
+
+        // Transfer protocol fee to factory deployer
+        if (protocolAmount > 0) {
+            (bool protocolSuccess, ) = payable(protocolFeeRecipient).call{value: protocolAmount}("");
+            require(protocolSuccess, "Protocol fee transfer failed");
+        }
 
         _checkAndUpdateRedemptionStatus();
 
@@ -381,6 +422,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
         require(msg.value > 0, "Must send TON");
         tonReserve += msg.value;
         _checkAndUpdateRedemptionStatus();
+        emit ReserveDeposited(msg.sender, msg.value);
     }
 
     // ============ Internal Functions ============
@@ -410,11 +452,7 @@ contract LaunchpadToken is ERC20, ReentrancyGuard, Pausable, ILaunchpadToken {
 
     // ============ Receive Function ============
 
-    /**
-     * @notice Accept direct TON deposits as reserve
-     */
     receive() external payable {
-        tonReserve += msg.value;
-        _checkAndUpdateRedemptionStatus();
+        revert("Use depositReserve()");
     }
 }

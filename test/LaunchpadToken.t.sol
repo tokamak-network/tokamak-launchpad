@@ -104,11 +104,14 @@ contract LaunchpadTokenTest is Test {
     function test_MintUpdatesReserve() public {
         uint256 reserveBefore = token.tonReserve();
         uint256 depositAmount = 1 ether;
+        uint256 spread = (depositAmount * 50) / 10000; // 0.5% BUY_SELL_SPREAD
+        uint256 protocolFee = (depositAmount * 10) / 10000; // 0.1% PROTOCOL_FEE
+        uint256 netDeposit = depositAmount - spread - protocolFee;
 
         vm.prank(user1);
         token.mint{value: depositAmount}();
 
-        assertEq(token.tonReserve(), reserveBefore + depositAmount);
+        assertEq(token.tonReserve(), reserveBefore + netDeposit);
     }
 
     function test_MintEmitsEvent() public {
@@ -236,7 +239,8 @@ contract LaunchpadTokenTest is Test {
             CURVE_COEFFICIENT,
             MIN_RESERVE_RATIO,
             TOKEN_DESCRIPTION,
-            TOKEN_IMAGE_URL
+            TOKEN_IMAGE_URL,
+            feeRecipient
         );
 
         assertEq(freshToken.getReserveRatio(), 10000); // 100%
@@ -347,7 +351,8 @@ contract LaunchpadTokenTest is Test {
             CURVE_COEFFICIENT,
             MIN_RESERVE_RATIO,
             TOKEN_DESCRIPTION,
-            TOKEN_IMAGE_URL
+            TOKEN_IMAGE_URL,
+            feeRecipient
         );
 
         // First mint should work (we are the factory since we deployed)
@@ -367,7 +372,8 @@ contract LaunchpadTokenTest is Test {
             CURVE_COEFFICIENT,
             MIN_RESERVE_RATIO,
             TOKEN_DESCRIPTION,
-            TOKEN_IMAGE_URL
+            TOKEN_IMAGE_URL,
+            feeRecipient
         );
 
         vm.prank(user1);
@@ -394,14 +400,11 @@ contract LaunchpadTokenTest is Test {
 
     // ============ Receive Tests ============
 
-    function test_ReceiveAcceptsTON() public {
-        uint256 reserveBefore = token.tonReserve();
-
+    function test_ReceiveRevertsTON() public {
         vm.prank(user1);
         (bool success, ) = address(token).call{value: 1 ether}("");
 
-        assertTrue(success);
-        assertEq(token.tonReserve(), reserveBefore + 1 ether);
+        assertFalse(success);
     }
 
     // ============ Fuzz Tests ============

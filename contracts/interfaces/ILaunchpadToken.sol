@@ -15,11 +15,12 @@ interface ILaunchpadToken is IERC20 {
     event EmergencyPaused(address indexed by, string reason);
     event EmergencyUnpaused(address indexed by);
     event MetadataUpdated(string description, string imageUrl);
+    event ReserveDeposited(address indexed depositor, uint256 amount);
 
     // View functions
     function getCurrentPrice() external view returns (uint256);
     function getReserveRatio() external view returns (uint256);
-    function getTonReserve() external view returns (uint256);
+    function tonReserve() external view returns (uint256);
     function calculateMintAmount(uint256 tonAmount) external view returns (uint256 tokenAmount, uint256 effectivePrice);
     function calculateBurnReturn(uint256 tokenAmount) external view returns (uint256 tonAmount, uint256 effectivePrice);
     function creator() external view returns (address);
