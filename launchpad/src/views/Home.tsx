@@ -17,7 +17,7 @@ export function Home() {
 
   const tokens = (allTokens as `0x${string}`[] | undefined) ?? [];
   const count = typeof tokenCount === "bigint" ? Number(tokenCount) : tokens.length;
-  const latestTokens = [...tokens].reverse().slice(0, 4);
+  const latestTokens = [...tokens].reverse().slice(0, 7);
 
   return (
     <div className="-mt-20">
@@ -103,23 +103,38 @@ export function Home() {
             {latestTokens.length > 0 ? (
               <>
                 {latestTokens[0] && (
-                  <div className="animate-float absolute right-10 top-[20%] rotate-3 transition-transform duration-300 hover:rotate-0 lg:right-16">
+                  <div className="animate-float absolute right-10 top-[14%] rotate-3 transition-transform duration-300 hover:rotate-0 lg:right-16">
                     <TokenPill tokenAddress={latestTokens[0]} />
                   </div>
                 )}
                 {latestTokens[1] && (
-                  <div className="animate-float-delayed absolute left-10 top-[38%] -rotate-2 transition-transform duration-300 hover:rotate-0 lg:left-14">
+                  <div className="animate-float-delayed absolute left-10 top-[26%] -rotate-2 transition-transform duration-300 hover:rotate-0 lg:left-14">
                     <TokenPill tokenAddress={latestTokens[1]} />
                   </div>
                 )}
                 {latestTokens[2] && (
-                  <div className="animate-float-slow absolute right-12 top-[54%] rotate-[5deg] transition-transform duration-300 hover:rotate-0 lg:right-20">
+                  <div className="animate-float-slow absolute right-12 top-[38%] rotate-[5deg] transition-transform duration-300 hover:rotate-0 lg:right-20">
                     <TokenPill tokenAddress={latestTokens[2]} />
                   </div>
                 )}
                 {latestTokens[3] && (
-                  <div className="animate-float absolute bottom-[18%] left-14 -rotate-3 transition-transform duration-300 hover:rotate-0 lg:left-18">
+                  <div className="animate-float absolute left-14 top-[50%] -rotate-3 transition-transform duration-300 hover:rotate-0 lg:left-18">
                     <TokenPill tokenAddress={latestTokens[3]} />
+                  </div>
+                )}
+                {latestTokens[4] && (
+                  <div className="animate-float-delayed absolute right-8 top-[62%] rotate-2 transition-transform duration-300 hover:rotate-0 lg:right-14">
+                    <TokenPill tokenAddress={latestTokens[4]} />
+                  </div>
+                )}
+                {latestTokens[5] && (
+                  <div className="animate-float-slow absolute left-12 top-[74%] -rotate-[4deg] transition-transform duration-300 hover:rotate-0 lg:left-20">
+                    <TokenPill tokenAddress={latestTokens[5]} />
+                  </div>
+                )}
+                {latestTokens[6] && (
+                  <div className="animate-float absolute bottom-[10%] right-16 rotate-1 transition-transform duration-300 hover:rotate-0 lg:right-24">
+                    <TokenPill tokenAddress={latestTokens[6]} />
                   </div>
                 )}
               </>

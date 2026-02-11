@@ -194,6 +194,13 @@ export function CreateToken() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const touch = (field: string) =>
+    setTouched((prev) => (prev.has(field) ? prev : new Set(prev).add(field)));
+  const touchAll = () =>
+    setTouched(
+      new Set(["name", "symbol", "basePrice", "curve", "reserve", "initialTon", "description", "image"]),
+    );
 
   /* Image upload */
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -208,6 +215,7 @@ export function CreateToken() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Upload failed");
       setImageUrl(data.url);
+      touch("image");
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -308,6 +316,7 @@ export function CreateToken() {
 
   /* Submit */
   const submit = () => {
+    touchAll();
     if (
       !valid ||
       typeof totalCost !== "bigint" ||
@@ -488,6 +497,7 @@ export function CreateToken() {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                onBlur={() => touch("description")}
                 maxLength={512}
                 rows={4}
                 placeholder="What is this token about?"
@@ -495,7 +505,7 @@ export function CreateToken() {
               />
               <div className="mt-1 flex items-center justify-between">
                 <span className="text-xs text-gray-400">{description.length}/512</span>
-                {fieldErrors.description && (
+                {touched.has("description") && fieldErrors.description && (
                   <span className="text-xs text-red-600">{fieldErrors.description}</span>
                 )}
               </div>
@@ -514,11 +524,12 @@ export function CreateToken() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onBlur={() => touch("name")}
                   placeholder="My Token"
                   maxLength={64}
-                  className={fieldErrors.name ? inputError : inputNormal}
+                  className={touched.has("name") && fieldErrors.name ? inputError : inputNormal}
                 />
-                {fieldErrors.name && (
+                {touched.has("name") && fieldErrors.name && (
                   <p className="mt-1 text-xs text-red-600">{fieldErrors.name}</p>
                 )}
               </div>
@@ -530,11 +541,12 @@ export function CreateToken() {
                   type="text"
                   value={symbol}
                   onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                  onBlur={() => touch("symbol")}
                   placeholder="MTK"
                   maxLength={16}
-                  className={fieldErrors.symbol ? inputError : inputNormal}
+                  className={touched.has("symbol") && fieldErrors.symbol ? inputError : inputNormal}
                 />
-                {fieldErrors.symbol && (
+                {touched.has("symbol") && fieldErrors.symbol && (
                   <p className="mt-1 text-xs text-red-600">{fieldErrors.symbol}</p>
                 )}
               </div>
@@ -554,10 +566,11 @@ export function CreateToken() {
                 type="text"
                 value={basePrice}
                 onChange={(e) => setBasePrice(sanitizeDecimal(e.target.value))}
+                onBlur={() => touch("basePrice")}
                 placeholder="0.001"
-                className={fieldErrors.basePrice ? inputError : inputNormal}
+                className={touched.has("basePrice") && fieldErrors.basePrice ? inputError : inputNormal}
               />
-              {fieldErrors.basePrice && (
+              {touched.has("basePrice") && fieldErrors.basePrice && (
                 <p className="mt-1 text-xs text-red-600">{fieldErrors.basePrice}</p>
               )}
             </div>
@@ -593,7 +606,8 @@ export function CreateToken() {
                   value={curveBase}
                   onChange={(e) => setCurveBase(e.target.value.replace(/[^0-9]/g, ""))}
                   placeholder="1"
-                  className={`${fieldErrors.curve ? inputError : inputNormal} w-24`}
+                  onBlur={() => touch("curve")}
+                  className={`${touched.has("curve") && fieldErrors.curve ? inputError : inputNormal} w-24`}
                 />
                 <span className="text-sm text-gray-400 dark:text-gray-500">×</span>
                 <select
@@ -615,7 +629,7 @@ export function CreateToken() {
                   </span>
                 )}
               </div>
-              {fieldErrors.curve && (
+              {touched.has("curve") && fieldErrors.curve && (
                 <p className="mt-1 text-xs text-red-600">{fieldErrors.curve}</p>
               )}
             </div>
@@ -630,10 +644,11 @@ export function CreateToken() {
                   type="number"
                   value={minReserveRatio}
                   onChange={(e) => setMinReserveRatio(e.target.value.replace(/[^0-9]/g, ""))}
+                  onBlur={() => touch("reserve")}
                   placeholder="80"
-                  className={fieldErrors.reserve ? inputError : inputNormal}
+                  className={touched.has("reserve") && fieldErrors.reserve ? inputError : inputNormal}
                 />
-                {fieldErrors.reserve && (
+                {touched.has("reserve") && fieldErrors.reserve && (
                   <p className="mt-1 text-xs text-red-600">{fieldErrors.reserve}</p>
                 )}
               </div>
@@ -645,10 +660,11 @@ export function CreateToken() {
                   type="text"
                   value={initialTon}
                   onChange={(e) => setInitialTon(sanitizeDecimal(e.target.value))}
+                  onBlur={() => touch("initialTon")}
                   placeholder="0.1"
-                  className={fieldErrors.initialTon ? inputError : inputNormal}
+                  className={touched.has("initialTon") && fieldErrors.initialTon ? inputError : inputNormal}
                 />
-                {fieldErrors.initialTon && (
+                {touched.has("initialTon") && fieldErrors.initialTon && (
                   <p className="mt-1 text-xs text-red-600">{fieldErrors.initialTon}</p>
                 )}
               </div>
